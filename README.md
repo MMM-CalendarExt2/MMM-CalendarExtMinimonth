@@ -3,7 +3,7 @@ Mini month plugin for MMM-CalendarExt/MMM-CalendarExt2
 
 
 ## Screenshot
-[[PlaceHolder]]
+![screenshot](https://github.com/eouia/MMM-CalendarExtMinimonth/blob/master/sc1.png?raw=true)
 
 
 ## Installation
