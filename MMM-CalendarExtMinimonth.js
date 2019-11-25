@@ -1,5 +1,5 @@
 /* Magic Mirror
-* Module: MMM-CalendarExtTimeline
+* Module: MMM-CalendarExtMinimonth
 *
 * By eouia
 */
@@ -22,7 +22,7 @@ Module.register("MMM-CalendarExtMinimonth",{
   start: function() {
     this.refreshTimer = null
     this.events = []
-		this.names = this.config.calendars
+    this.names = this.config.calendars
     this.slots = []
     this.maxEventCounts = 0
   },
@@ -32,8 +32,8 @@ Module.register("MMM-CalendarExtMinimonth",{
   },
 
   getScripts: function () {
-		return ["moment.js"];
-	},
+  return ["moment.js"];
+  },
 
   getDom: function() {
     var dom = document.createElement("div")
@@ -43,7 +43,6 @@ Module.register("MMM-CalendarExtMinimonth",{
     header.className = "header"
     header.innerHTML = (this.config.titleFormat) ? moment().format(this.config.titleFormat) : null
     dom.appendChild(header)
-
     dom.appendChild(this.drawSlot())
     return dom
   },
@@ -51,7 +50,6 @@ Module.register("MMM-CalendarExtMinimonth",{
   refreshScreen: function() {
     clearTimeout(this.refreshTimer)
     this.refreshTimer = null
-
     this.updateDom()
     this.refreshTimer = setTimeout(()=>{
       this.refreshScreen()
@@ -69,43 +67,42 @@ Module.register("MMM-CalendarExtMinimonth",{
         document.body.appendChild(colors)
       }
       this.refreshScreen()
-		}
-		if (notification == "CALEXT_SAYS_CALENDAR_MODIFIED") {
-			setTimeout(() => {
-				this.updateRequest()
-			}, 1000)
-		}
-		if (notification == "CALEXT_SAYS_SCHEDULE") {
-			this.updateContent(payload)
-		}
-
-		if (notification == "CALEXT2_CALENDAR_MODIFIED") {
-			setTimeout(() => {
-				this.updateRequest2()
-			}, 1000)
-		}
+    }
+    if (notification == "CALEXT_SAYS_CALENDAR_MODIFIED") {
+      setTimeout(() => {
+        this.updateRequest()
+      }, 1000)
+    }
+    if (notification == "CALEXT_SAYS_SCHEDULE") {
+      this.updateContent(payload)
+    }
+    if (notification == "CALEXT2_CALENDAR_MODIFIED") {
+      setTimeout(() => {
+        this.updateRequest2()
+      }, 1000)
+    }
   },
 
   updateContent: function(payload=null) {
-		if (payload != null) {
-			if(payload.message == "SCHEDULE_FOUND") {
-				this.events = payload.events
-				this.events.sort(function(a, b){
-					if (a.startTime == b.startTime) {
-						return a.endTime - b.endTime
-					} else {
-						return a.startTime - b.startTime
-					}
-				})
-
-			}
+    if (payload != null) {
+      if(payload.message == "SCHEDULE_FOUND") {
+        this.events = payload.events
+        this.events.sort(function(a, b) {
+          if (a.startTime == b.startTime) {
+            return a.endTime - b.endTime
+          } else {
+            return a.startTime - b.startTime
+          }
+        })
+      }
       this.slots = this.makeSlot([].concat(this.events))
-			this.refreshScreen()
-		}
-	},
+      this.refreshScreen()
+    }
+  },
 
 
   drawSlot: function() {
+    console.log("draw")
     var trick = document.getElementById("CXMM_COLOR_TRICK")
     var trickColor = {}
     if (trick) {
@@ -116,6 +113,7 @@ Module.register("MMM-CalendarExtMinimonth",{
 
     var dom = document.createElement("div")
     dom.className = "slots"
+    console.log(this.slots)
     if (this.slots.length == 0) return dom
 
     var locale = (this.config.locale) ? this.config.locale : moment.locale()
@@ -162,7 +160,6 @@ Module.register("MMM-CalendarExtMinimonth",{
 
 
       if (trick && !(isToday) && slot.events.length > 0) {
-        //console.log(slot.events.length, this.maxEventCounts)
         var rgb = []
         for (var j = 0; j < 3; j++) {
           var s = trickColor.from[j]
@@ -195,8 +192,8 @@ Module.register("MMM-CalendarExtMinimonth",{
       var dayEnd = moment(index).locale(locale).endOf("day")
       for(var i = 0; i < events.length; i++) {
         var ev = events[i]
-        var evS = moment(ev.startDate)
-        var evE = moment(ev.endDate)
+        var evS = moment(Number(ev.startDate))
+        var evE = moment(Number(ev.endDate))
         if (evE.isSameOrBefore(dayStart) || evS.isAfter(dayEnd)) {
           // not matched
         } else {
@@ -214,50 +211,49 @@ Module.register("MMM-CalendarExtMinimonth",{
 
   updateRequest: function() {
     var filter = {
-		  names: this.names,
-			from: moment().startOf('month').startOf('week').format('x'),
-		  to: moment().endOf('month').endOf('week').format('x'),
-		  count: this.config.maxItems
-		}
-		var payload = {
-		  filter: filter,
-		  sessionId: moment().format('x')
-		}
-		this.sendNotification("CALEXT_TELL_SCHEDULE", payload)
+      names: this.names,
+      from: moment().startOf('month').startOf('week').format('x'),
+      to: moment().endOf('month').endOf('week').format('x'),
+      count: this.config.maxItems
+    }
+    var payload = {
+      filter: filter,
+      sessionId: moment().format('x')
+    }
+    this.sendNotification("CALEXT_TELL_SCHEDULE", payload)
   },
 
   updateRequest2: function() {
     var payload = {
-		  filter: (e) => {
-				var from = moment().startOf("month").startOf('week').format("X")
-				var to = moment().endOf("month").endOf('week').format("X")
+      filter: (e) => {
+        var from = moment().startOf("month").startOf('week').format("X")
+        var to = moment().endOf("month").endOf('week').format("X")
         if (this.names.length > 0) {
           if (this.names.indexOf(e.calendarName) < 0) {
             return false
           }
         }
-				if (e.startDate > to || e.endDate < from) {
+        if (e.startDate > to || e.endDate < from) {
           return false
         }
-        console.log(e.title)
-				return true
-			},
-		  callback: (events) => {
-				if (events.length > 0) {
-					for (i = 0; i < events.length; i++) {
-						events[i].name = events[i].calendarName
-						events[i].startDate = events[i].startDate * 1000
-						events[i].endDate = events[i].endDate * 1000
-						events[i].styleName = events[i].className
-					}
-					var payload = {
-						message: "SCHEDULE_FOUND",
-						events: events
-					}
-					this.updateContent(payload)
-				}
-			}
-		}
-		this.sendNotification("CALEXT2_EVENT_QUERY", payload)
+        return true
+      },
+      callback: (events) => {
+        if (events.length > 0) {
+          for (i = 0; i < events.length; i++) {
+            events[i].name = events[i].calendarName
+            events[i].startDate = events[i].startDate * 1000
+            events[i].endDate = events[i].endDate * 1000
+            events[i].styleName = events[i].className
+          }
+          var payload = {
+            message: "SCHEDULE_FOUND",
+            events: events
+          }
+          this.updateContent(payload)
+        }
+      }
+    }
+    this.sendNotification("CALEXT2_EVENT_QUERY", payload)
   },
 })
